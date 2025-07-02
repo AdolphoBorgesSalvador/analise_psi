@@ -1,0 +1,25 @@
+# Ignora ambientes virtuais
+.venv/
+venv/
+
+# Ignora arquivos de configuração sensíveis
+.env
+
+# Ignora diretório de dados
+data/
+
+# Ignora diretório antigo
+antigo/
+
+# Ignora arquivos temporários de Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Ignora arquivos temporários de editor
+*.swp
+*.swo
+*.sublime-workspace
+*.sublime-project
+*.vscode/
