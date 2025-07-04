@@ -158,8 +158,75 @@ def classificar(mapa):
 
     return mapa
 
+def projetar_saldo(mapa: pd.DataFrame) -> pd.DataFrame:
+    """
+    Projeta o saldo mês a mês e avalia cobertura futura.
+    
+    Args:
+        mapa (DataFrame): DataFrame com colunas de estoque, importações e médias.
+    
+    Returns:
+        DataFrame com colunas adicionais de saldo e cobertura.
+    """
+    # Listas para armazenar resultados
+    saldo_julho = []
+    saldo_agosto = []
+    saldo_setembro = []
+    saldo_outubro = []
+    cobertura_outubro = []
+    status_outubro = []
 
-# a
+    # Iterar pelas linhas
+    for _, row in mapa.iterrows():
+        # Estoque inicial (Junho)
+        estoque_inicial = row["Estoque Jun/25"]
+        media = row["media_6m"]
+        
+        # Importações previstas
+        imp_jul = row["IMP 07/25"]
+        imp_ago = row["IMP 08/25"]
+        imp_set = row["IMP 09/25"]
+        imp_out = row["IMP 10/25"]
+
+        # Saldo Julho
+        saldo_jul = estoque_inicial + imp_jul - media
+        saldo_julho.append(saldo_jul)
+
+        # Saldo Agosto
+        saldo_ago = saldo_jul + imp_ago - media
+        saldo_agosto.append(saldo_ago)
+
+        # Saldo Setembro
+        saldo_sete = saldo_ago + imp_set - media
+        saldo_setembro.append(saldo_sete)
+
+        # Saldo Outubro
+        saldo_out = saldo_sete + imp_out - media
+        saldo_outubro.append(saldo_out)
+
+        # Cobertura Outubro
+        cobertura = saldo_out / media if media != 0 else 0
+        cobertura_outubro.append(round(cobertura, 2))
+
+        # Status
+        if cobertura < 3:
+            status = "Necessita compra Outubro"
+        else:
+            status = "Cobertura adequada"
+        status_outubro.append(status)
+
+    # Adiciona ao DataFrame
+    mapa["Saldo Julho"] = saldo_julho
+    mapa["Saldo Agosto"] = saldo_agosto
+    mapa["Saldo Setembro"] = saldo_setembro
+    mapa["Saldo Outubro"] = saldo_outubro
+    mapa["Cobertura Outubro (meses)"] = cobertura_outubro
+    mapa["Status Outubro"] = status_outubro
+
+    return mapa
+
+
+
 psi, mapa = carregar_dados(CAMINHO_PSI, CAMINHO_MAPA)
 mapa_processado = primeiro_calculo(psi, mapa)
 mapa_classificado = classificar(mapa_processado)
@@ -171,14 +238,13 @@ mapa_classificado = mapa_classificado[['Material', 'Descrição', 'Jul/24', 'Ago
        'media_12m', 'media_6m', 'media_3m', 'mediana_6m', 'Total IMP',
        'Mos_Sem_Imp','Classe_ABC_XYZ']]
 
-mapa_classificado
 
 
-mapa_classificado.to_json(
-    os.getenv("CAMINHO_JSON_CLASSIFICADO"),
-    orient="records",
-    force_ascii=False,
-    indent=4
-)
 
 
+mapa_final = projetar_saldo(mapa_classificado)
+mapa_final = mapa_final[['Material', 'Descrição','Total IMP','media_6m', 'media_3m', 'mediana_6m','Classe_ABC_XYZ', 'Saldo Julho', 'Saldo Agosto',
+       'Saldo Setembro', 'Saldo Outubro', 'Cobertura Outubro (meses)',
+       'Status Outubro']]
+
+mapa_final
